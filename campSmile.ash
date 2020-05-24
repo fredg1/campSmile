@@ -111,6 +111,6 @@ void main(string query) {
 	//	pathID = ...;
 	} else pathID = getPathID();
 
-	string smileBuff = getThatDaysBuff(month, day, year, pathID;
+	string smileBuff = getThatDaysBuff(month, day, year, pathID);
 	print("Will be: smile of the " + smileBuff);
 }
