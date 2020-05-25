@@ -21,20 +21,6 @@ int getPathID() { // until an option to get this is implemented into mafia, made
 	return(path);
 }
 
-int [13] monthLength;
-	monthLength [1] = 31; // January
-	monthLength [2] = 28; // February
-	monthLength [3] = 31; // March
-	monthLength [4] = 30; // April
-	monthLength [5] = 31; // May
-	monthLength [6] = 30; // June
-	monthLength [7] = 31; // July
-	monthLength [8] = 31; // August
-	monthLength [9] = 30; // September
-	monthLength [10] = 31; // October
-	monthLength [11] = 30; // November
-	monthLength [12] = 31; // December
-
 boolean isLeapYear(int year) {
 	if (year % 400 == 0) return true;
 	else if (year % 100 == 0) return false;
@@ -42,75 +28,52 @@ boolean isLeapYear(int year) {
 	else return false;
 }
 
-int dayToInt(int month, int day, int year) {
-	//supports any date since 2020
-	int offset = 5; // December 31st, 2019 is Platypus (could change buffOrder so that [0] == "Platypus", but won't ¬_¬)
-	int yearCount = 2020;
-	int monthCount = 1;
-	int dayCount = 1;
-	year += month / 12; // we now know month => [1,12], though day can still be bigger than the month's day, but it doesn't matter
-	monthLength [2] = isLeapYear(yearCount) ? 29 : 28;
-
-	while (yearCount < year || monthCount < month) {
-		offset += monthLength [monthCount];
-		monthCount++;
-
-		if (monthCount > 12) {
-			yearCount++;
-			monthCount = 1;
-			monthLength [2] = isLeapYear(yearCount) ? 29 : 28;
-		}
-	}
-	if (yearCount > year || monthCount > month) print("Error, overshot " + (yearCount > year ? "year" : "month") );
-
-	offset += day;
-
-	return offset;
+int getOffset(int year) { // made by @Skaazi
+    int offset = 5; // for 2020
+    for( int i = year; i > 2020; i-- ) {
+        if( isLeapYear( i - 1 ) ) { offset += 1; }
+        offset += 365;
+    }
+    return offset % 9;
 }
 
-string getThatDaysBuff(int month, int day, int year, int pathID) {
-	int specificDaysArbitraryNumber = dayToInt(month, day, year) + pathID;
-	int specificDaysSeedNumber = specificDaysArbitraryNumber % 9;
-	return buffOrder [specificDaysSeedNumber];
-}
-
-void main(string query) {
-	//add inputs
+void main(string fullQuery) {
 
 	string dateUnified;
-	int month;
-	int day;
-	int year;
-	int pathID;
-	boolean pathIDSpecified;
+	int pathID = -1;
 
-	switch (query.to_lower_case()) { // may want to change this; may want to break up query into multiple words BEFORE this step
-		case "help":
-			print("Type today, now or present to get today's smile buff on the path you're on.");
-			//todo: specify how a date should be entered; how would one also add a path ID?
-			print("Doesn't support \"path\" as a string. If included, specify the path by using the path's number (https://kol.coldfront.net/thekolwiki/index.php/Paths_by_number)");
-			return;
-		case "today":
-		case "now":
-		case "present":
-			dateUnified = format_date_time("yyyyMMdd", today_to_string(), "yyyy MM dd");
-			break;
-		default:
-			print("Didn't seem to match any of the keywords, so I'll assume you input a date");
-			// dateUnified = <part of query that represents a date>; // accept multiple formats? leave the possibility of some more keywords to be entered? (i.e. not registering a keyword doesn't mean query == a date in expected format, and nothing else) One example/use would be to input pathID (or make that a 2nd input? left blank if the person wants to use the path he's on? But then what if they type "help"; wouldn't want to bother them with a 2nd input for no reason / before they know what they are doing...)
-			break;
-	}	
+	string [int] splitQuery = split_string(fullQuery, " ");
+	foreach i, query in splitQuery {
 
-	//todo: turn dateUnified into month, day and year. Also get pathID from query if was included? somehow?
-
-	if (year < 2020) { print("I don't intend this to be a time machine; please query a date post-2020/01/01"); return; }
-	if (month < 1) { print("Month needs to be higher than 0 (but can be higher than 12! Just make sure you understand what that means)"); return; }
-	if (day < 1) { print("Day needs to be higher than 0 (but can be higher than 31! Just make sure you understand what that means)"); return; }
+		switch (query.to_lower_case()) {
+			case "help":
+				print("Type your arguments, separated by spaces.");
+				print("Type \"today\", \"now\" or \"present\" to get today's smile buff on the path you're on. Otherwise, input a specific date in a yyyyMMdd format.");
+				print("To specify a specific path, use \"path:pathnumber\", where pathnumber is... the path's number! (https://kol.coldfront.net/thekolwiki/index.php/Paths_by_number)");
+				return;
+			case "today":
+			case "now":
+			case "present":
+				dateUnified = today_to_string();
+				break;
+			default:
+				if (query.contains_text("path:")) {
+					string [int] pathQuery = split_string(query, ":");
+					pathID = pathQuery [1].to_int(); // will there be a way to enter the full name of the path??
+				} else {
+					print("Argument " + (i+1) + " didn't seem to match any of the keywords, so I assume you input a date");
+					dateUnified = query;
+				}
+				break;
+		}
+	}
 	
-	if (pathIDSpecified){ //move this inside the switch statement??
-	//	pathID = ...;
-	} else pathID = getPathID();
+	if (pathID < 0) // path given was either invalid or was not given
+		pathID = getPathID();
 
-	string smileBuff = getThatDaysBuff(month, day, year, pathID);
+	int offset = getOffset(format_date_time("yyyyMMdd", dateUnified, "yyyy").to_int());
+	int specificDaysArbitraryNumber = format_date_time("yyyyMMdd", dateUnified, "D").to_int() + pathID + offset;
+	int specificDaysSeedNumber = specificDaysArbitraryNumber % 9;
+	string smileBuff = buffOrder [specificDaysSeedNumber];
 	print("Will be: smile of the " + smileBuff);
 }
