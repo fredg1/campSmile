@@ -11,16 +11,6 @@ string [9] buffOrder;
 	buffOrder [7] = "Marmot";
 	buffOrder [8] = "Wombat";
 
-int getPathID() { // until an option to get this is implemented into mafia, made by @Rinn
-	int path = -1;
-	buffer page = visit_url("api.php?what=status&for=mafiaScriptTest");
-	matcher m = create_matcher('"path"\:"(.*?)"', page);
-	if (find(m)) {
-		path = group(m, 1).to_int();
-	} else print("error, couldn't get your path");
-	return(path);
-}
-
 boolean isLeapYear(int year) {
 	if (year % 400 == 0) return true;
 	else if (year % 100 == 0) return false;
@@ -69,7 +59,7 @@ void main(string fullQuery) {
 	}
 	
 	if (pathID < 0) // path given was either invalid or was not given
-		pathID = getPathID();
+		pathID = my_path_id();
 
 	int offset = getOffset(format_date_time("yyyyMMdd", dateUnified, "yyyy").to_int());
 	int specificDaysArbitraryNumber = format_date_time("yyyyMMdd", dateUnified, "D").to_int() + pathID + offset;
